@@ -25,9 +25,9 @@ tokenized_text = tokenizer.tokenize(ClsSepToken)
 print(tokenized_text)
 indexed_text = tokenizer.convert_tokens_to_ids(tokenized_text)
 
-## tokenizer와 index 여부 확인 해보기 
 for tup in zip(tokenized_text, indexed_text):
     print(tup[0], tup[1])
+
 
 #segmentId
 segment_id = [1] * len(tokenized_text)
@@ -42,5 +42,14 @@ print(model)
 
 with torch.no_grad():
     encoded_layer, _ = model(token2Tensor, segments2Tensor)
+    print(len(encoded_layer)) ## num of layer
+    print(len(encoded_layer[0])) ## num of batch
+    print(len(encoded_layer[0][0])) ## num of token(word)
+    print(len(encoded_layer[0][0][0])) # num of hidden units
 
-    print(encoded_layer)
+
+    token_embedding = torch.stack(encoded_layer, dim=0)
+    print(token_embedding.size()) ## [layer, batch, token, hidden units]
+
+    token_embedding = torch.squeeze(token_embedding, dim=1)
+    print(token_embedding.size()) ## [layer, toke, hidden_units]
