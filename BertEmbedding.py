@@ -11,12 +11,19 @@ BERT input :
 
 import torch
 from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
+import numpy as np
+from numpy.linalg import norm
+def cosineSim(A,B):
+    return np.dot(A,B) / (norm(A) * norm(B))
+
 ## Load pre-trained bert
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case = False)
 
 # Tokenization
-text = """Twitter put a 12-hour restriction on Donald Trump Jr.'s account,
-saying the president's son put out a tweet that contained misleading and potentially harmful information about the coronavirus."""
+# text = """Twitter put a 12-hour restriction on Donald Trump Jr.'s account,
+# saying the president's son put out a tweet that contained misleading and potentially harmful information about the coronavirus."""
+text = "After stealing money from the bank vault, the bank robber was seen " \
+       "fishing on the Mississippi river bank."
 print(text)
 
 ClsSepToken = "[CLS] " + text + " [SEP]"
@@ -53,3 +60,34 @@ with torch.no_grad():
 
     token_embedding = torch.squeeze(token_embedding, dim=1)
     print(token_embedding.size()) ## [layer, toke, hidden_units]
+
+    token_embedding = token_embedding.permute(1, 0, 2)
+    print(token_embedding.size())
+    
+    
+    ## 마지막 레이어 4개를 사용하는 방법이 성능이 좋다고 함
+    ## concat, Sum 둘다 사용할 수 있음.
+    token_cat = []
+    token_sum = []
+    for token in token_embedding:
+        catTokenEmbedding = torch.cat((token[-1], token[-2], token[-3], token[-4]), dim=0)
+        token_cat.append(catTokenEmbedding)
+        sumTokenEmbedding = torch.sum(token[-4:], dim = 0)
+        token_sum.append(sumTokenEmbedding)
+    print(len(token_cat), len(token_cat[0]))
+    print(len(token_sum), len(token_sum[0]))
+
+
+    for idx, token in enumerate(tokenized_text):
+        print(idx,"\t",token)
+
+    ##print vector of token sum about bank
+    print("Token Sum Vector about Bank)")
+    print("bank", token_sum[6][:10])
+    print("bank", token_sum[10][:10])
+    print("river", token_sum[19][:10])
+
+    ## print cosine simility
+    print("Cosine simility")
+    print("bank vs bank: ", cosineSim(token_sum[10],token_sum[6]))
+    print("bank vs river: ", cosineSim(token_sum[10],token_sum[19]))
